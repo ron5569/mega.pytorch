@@ -52,6 +52,7 @@ def do_train(
     checkpoint_period,
     test_period,
     arguments,
+    writer
 ):
     logger = logging.getLogger("mega_core.trainer")
     logger.info("Start training")
@@ -118,6 +119,10 @@ def do_train(
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
         if iteration % 20 == 0 or iteration == max_iter:
+            writer.add_scalar("total loss",losses, iteration)
+
+            for k,v in loss_dict.items():
+                writer.add_scalar(k,v, iteration)
             logger.info(
                 meters.delimiter.join(
                     [
@@ -140,7 +145,7 @@ def do_train(
         if data_loader_val is not None and test_period > 0 and iteration % test_period == 0:
             meters_val = MetricLogger(delimiter="  ")
             synchronize()
-            _ = inference(  # The result can be used for additional logging, e. g. for TensorBoard
+            _ = inference(cfg,  # The result can be used for additional logging, e. g. for TensorBoard
                 model,
                 # The method changes the segmentation mask format in a data loader,
                 # so every time a new data loader is created:

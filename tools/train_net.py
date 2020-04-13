@@ -27,6 +27,7 @@ from mega_core.utils.comm import synchronize, get_rank
 from mega_core.utils.imports import import_file
 from mega_core.utils.logger import setup_logger
 from mega_core.utils.miscellaneous import mkdir, save_config
+from torch.utils.tensorboard import SummaryWriter
 
 # See if we can use apex.DistributedDataParallel instead of the torch default,
 # and enable mixed-precision via apex.amp
@@ -86,7 +87,7 @@ def train(cfg, local_rank, distributed):
         data_loader_val = None
 
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
-
+    writer = SummaryWriter('SummaryWriter.txt')
     do_train(
         cfg,
         model,
@@ -99,6 +100,7 @@ def train(cfg, local_rank, distributed):
         checkpoint_period,
         test_period,
         arguments,
+        writer
     )
 
     return model
