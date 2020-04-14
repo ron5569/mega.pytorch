@@ -42,6 +42,7 @@ def do_vid_evaluation(dataset, predictions, output_folder, box_only, logger):
         use_07_metric=False,
     )
     result_str = "mAP: {:.4f}\n".format(result["map"])
+    print(result_str)
     for i, ap in enumerate(result["ap"]):
         if i == 0:  # skip background
             continue
@@ -142,7 +143,10 @@ def calc_detection_vid_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
         gt_label = gt_boxlist.get_field("labels").numpy()
 
         for l in np.unique(np.concatenate((pred_label, gt_label)).astype(int)):
+
             pred_mask_l = pred_label == l
+            if not all(pred_mask_l):
+                print("not make sence!!")
             pred_bbox_l = pred_bbox[pred_mask_l]
             pred_score_l = pred_score[pred_mask_l]
 

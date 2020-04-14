@@ -114,7 +114,9 @@ def inference(
     if not is_main_process():
         return
 
+
     if output_folder:
+        print("about to save:", os.path.join(output_folder, "predictions.pth"))
         torch.save(predictions, os.path.join(output_folder, "predictions.pth"))
 
     extra_args = dict(

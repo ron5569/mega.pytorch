@@ -87,7 +87,7 @@ def train(cfg, local_rank, distributed):
         data_loader_val = None
 
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
-    writer = SummaryWriter('SummaryWriter.txt')
+    writer = SummaryWriter('SummaryWriter')
     do_train(
         cfg,
         model,

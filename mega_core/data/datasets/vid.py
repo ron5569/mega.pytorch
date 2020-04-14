@@ -135,7 +135,7 @@ class VIDDataset(torch.utils.data.Dataset):
             keep[idx] = False if len(objs) == 0 else True
         print("Had filtered {} images".format(len(self)))
 
-        if is_main_process():
+        if False:
             with open(cache_file, "wb") as fid:
                 pickle.dump(keep, fid)
             print("Saving {}'s keep information into {}".format(self.det_vid, cache_file))
@@ -190,7 +190,7 @@ class VIDDataset(torch.utils.data.Dataset):
                 annos.append(anno)
             print("Had processed {} images".format(len(self)))
 
-            if is_main_process():
+            if False:
                 with open(cache_file, "wb") as fid:
                     pickle.dump(annos, fid)
                 print("Saving {}'s annotation information into {}".format(self.det_vid, cache_file))
@@ -198,7 +198,6 @@ class VIDDataset(torch.utils.data.Dataset):
         return annos
 
     def get_img_info(self, idx):
-        #print(idx)
         im_info = self.annos[idx]["im_info"]
         return {"height": im_info[0], "width": im_info[1]}
 
