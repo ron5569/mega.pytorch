@@ -34,7 +34,7 @@ def main():
         help='job launcher')
     parser.add_argument(
         "--config-file",
-        default="/private/home/fmassa/github/detectron.pytorch_v2/configs/e2e_faster_rcnn_R_50_C4_1x_caffe2.yaml",
+        default="configs/MEGA/vid_R_101_C4_MEGA_1x.yaml",
         metavar="FILE",
         help="path to config file",
     )

@@ -151,6 +151,8 @@ class VIDDataset(torch.utils.data.Dataset):
 
         objs = target.findall("object")
         for obj in objs:
+            if obj.find("name") is None:
+                continue
             if not obj.find("name").text in self.classes_to_ind:
                 continue
 

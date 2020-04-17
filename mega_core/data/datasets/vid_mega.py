@@ -35,7 +35,7 @@ class VIDMEGADataset(VIDDataset):
         img_refs_l = []
         img_refs_m = []
         img_refs_g = []
-        if hasattr(self, "pattern"):
+        if hasattr(self, "pattern"): ##VID
             offsets = np.random.choice(cfg.MODEL.VID.MEGA.MAX_OFFSET - cfg.MODEL.VID.MEGA.MIN_OFFSET + 1,
                                        cfg.MODEL.VID.MEGA.REF_NUM_LOCAL, replace=False) + cfg.MODEL.VID.MEGA.MIN_OFFSET
             for i in range(len(offsets)):
@@ -62,7 +62,7 @@ class VIDMEGADataset(VIDDataset):
                     ref_filename = self.pattern[idx] % ref_id
                     img_ref = Image.open(self._img_dir % ref_filename).convert("RGB")
                     img_refs_g.append(img_ref)
-        else:
+        else: ###DET
             for i in range(cfg.MODEL.VID.MEGA.REF_NUM_LOCAL):
                 img_refs_l.append(img.copy())
             if cfg.MODEL.VID.MEGA.MEMORY.ENABLE:
