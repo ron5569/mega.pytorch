@@ -5,6 +5,8 @@ Basic training script for PyTorch
 
 # Set up custom environment before nearly anything else is imported
 # NOTE: this should be the first import (no not reorder)
+from os.path import join
+
 from mega_core.utils.env import setup_environment  # noqa F401 isort:skip
 from mega_core.utils.dist_env import init_dist
 from mega_core.utils.distributed import ompi_rank, ompi_local_rank
@@ -12,7 +14,7 @@ from mega_core.utils.distributed import ompi_rank, ompi_local_rank
 import argparse
 import time
 import os
-
+import datetime
 import torch
 from mega_core.config import cfg
 from mega_core.data import make_data_loader
@@ -31,6 +33,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # See if we can use apex.DistributedDataParallel instead of the torch default,
 # and enable mixed-precision via apex.amp
+SUMMARY_WRITER = 'SummaryWriter'
 try:
     from apex import amp
 except ImportError:
@@ -87,7 +90,11 @@ def train(cfg, local_rank, distributed):
         data_loader_val = None
 
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
-    writer = SummaryWriter('SummaryWriter')
+
+    t = datetime.datetime.now()
+    dir_name =  join(SUMMARY_WRITER, t.strftime('%d%h_%H_%M'))
+    os.makedirs(dir_name)
+    writer = SummaryWriter(dir_name)
     do_train(
         cfg,
         model,
