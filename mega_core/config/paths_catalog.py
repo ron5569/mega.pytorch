@@ -8,12 +8,12 @@ class DatasetCatalog(object):
     DATA_DIR = "datasets"
     DATASETS = {
         "coco_2017_train": {
-            "img_dir": "coco/train2017",
-            "ann_file": "coco/annotations/instances_train2017.json"
+            "img_dir": "/data2/coco/images",
+            "ann_file": "/data2/coco/annotations/instances_train2017.json"
         },
         "coco_2017_val": {
-            "img_dir": "coco/val2017",
-            "ann_file": "coco/annotations/instances_val2017.json"
+            "img_dir": "/data2/coco/images/val",
+            "ann_file": "/data2/coco/annotations/instances_val2017.json"
         },
         "coco_2014_train": {
             "img_dir": "coco/train2014",
@@ -173,9 +173,33 @@ class DatasetCatalog(object):
             "img_dir": "ILSVRC2015/Data/VID",
             "anno_path": "ILSVRC2015/Annotations/VID",
             "img_index": "ILSVRC2015/ImageSets/VID_val_videos.txt"
-        }
-    }
+        },
+        "VID_ron_test": {
+            "img_dir": "/data2/xmls/Data/VID",
+            "anno_path": "/data2/xmls/Annotations/VID",
+            "img_index": "/data2/xmls/ImageSets/VID_train_15frames.txt"
+        },
+        "VID_ron_test2": {
+            "img_dir": "/data2/test_sets/Data/VID",
+            "anno_path": "/data2/test_sets/Annotations/VID",
+            "img_index": "/data2/test_sets/ImageSets/VID_train_15frames.txt"
+        },
+        "DET_co_co": {
+            "img_dir":   "/data2/coco/Data/VID",
+            "anno_path": "/data2/coco/Annotations/VID",
+            "img_index": "/data2/coco/ImageSets/DET_val_videos.txt"
+       } 
+#/data2/test_sets/ImageSets/VID_train_15frames.txt
 
+ }
+    for test_file in os.listdir("/data2/test_sets/Data/VID/test"):
+        base_dir = "/data2/test_sets"
+        d = {
+            "img_dir": f"{base_dir}/Data/VID",
+            "anno_path":  f"{base_dir}/Annotations/VID",
+            "img_index":  f"{base_dir}/ImageSets/VID_val_videos_{test_file}.txt"
+        }
+        DATASETS[f"VID_val_videos_{test_file}"] = d
     @staticmethod
     def get(name, method="base"):
         if "coco" in name:
