@@ -75,24 +75,12 @@ def do_train(
         if any(len(target) < 1 for target in targets):
             logger.error(f"Iteration={iteration + 1} || Image Ids used for training {_} || targets Length={[len(target) for target in targets]}" )
             continue
+
         data_time = time.time() - end
         iteration = iteration + 1
         arguments["iteration"] = iteration
 
-        if not cfg.MODEL.VID.ENABLE:
-            images = images.to(device)
-        else:
-            method = cfg.MODEL.VID.METHOD
-            if method in ("base", ):
-                images = images.to(device)
-            elif method in ("rdn", "mega", "fgfa", "dff"):
-                images["cur"] = images["cur"].to(device)
-                for key in ("ref", "ref_l", "ref_m", "ref_g"):
-                    if key in images.keys():
-                        images[key] = [img.to(device) for img in images[key]]
-            else:
-                raise ValueError("method {} not supported yet.".format(method))
-        targets = [target.to(device) for target in targets]
+        images, targets = convert_to_cuda(cfg, device, images, targets)
 
         loss_dict = model(images, targets)
 
@@ -119,27 +107,12 @@ def do_train(
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
         if iteration % 20 == 0 or iteration == max_iter:
-            writer.add_scalar("total loss",losses, iteration)
 
+            writer.add_scalar("total loss",losses, iteration)
             for k,v in loss_dict.items():
                 writer.add_scalar(k,v, iteration)
-            logger.info(
-                meters.delimiter.join(
-                    [
-                        "eta: {eta}",
-                        "iter: {iter}",
-                        "{meters}",
-                        "lr: {lr:.6f}",
-                        "max mem: {memory:.0f}",
-                    ]
-                ).format(
-                    eta=eta_string,
-                    iter=iteration,
-                    meters=str(meters),
-                    lr=optimizer.param_groups[0]["lr"],
-                    memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
-                )
-            )
+
+            write_log(eta_string, iteration, logger, meters, optimizer)
         if iteration % checkpoint_period == 0:
             checkpointer.save("model_{:07d}".format(iteration), **arguments)
         if data_loader_val is not None and test_period > 0 and iteration % test_period == 0:
@@ -164,37 +137,33 @@ def do_train(
                 )
                 logger.info(f"write test set, {dataset_name}_map {_['map']}, iteration: {iteration}")
                 writer.add_scalar(f"{dataset_name}_map", _["map"], iteration)
-            synchronize()
+
             model.train()
-            # with torch.no_grad():
-            #     # Should be one image for each GPU:
-            #     for iteration_val, (images_val, targets_val, _) in enumerate(tqdm(data_loader_val)):
-            #         images_val = images_val.to(device)
-            #         targets_val = [target.to(device) for target in targets_val]
-            #         loss_dict = model(images_val, targets_val)
-            #         losses = sum(loss for loss in loss_dict.values())
-            #         loss_dict_reduced = reduce_loss_dict(loss_dict)
-            #         losses_reduced = sum(loss for loss in loss_dict_reduced.values())
-            #         meters_val.update(loss=losses_reduced, **loss_dict_reduced)
-            # synchronize()
-            # logger.info(
-            #     meters_val.delimiter.join(
-            #         [
-            #             "[Validation]: ",
-            #             "eta: {eta}",
-            #             "iter: {iter}",
-            #             "{meters}",
-            #             "lr: {lr:.6f}",
-            #             "max mem: {memory:.0f}",
-            #         ]
-            #     ).format(
-            #         eta=eta_string,
-            #         iter=iteration,
-            #         meters=str(meters_val),
-            #         lr=optimizer.param_groups[0]["lr"],
-            #         memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
-            #     )
-            # )
+            with torch.no_grad():
+                # Should be one image for each GPU:
+                for iteration_val, (images_val, targets_val, _) in enumerate(tqdm(data_loader_val)):
+                    images_val["cur"] = images_val["cur"].to(device)
+                    for key in ("ref", "ref_l", "ref_m", "ref_g"):
+                        if key in images_val.keys():
+                            images_val[key] = [img.to(device) for img in images_val[key]]
+
+
+                    targets_val = [target.to(device) for target in targets_val]
+                    loss_dict = model(images_val, targets_val)
+                    losses = sum(loss for loss in loss_dict.values())
+                    loss_dict_reduced = reduce_loss_dict(loss_dict)
+                    losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+                    meters_val.update(loss=losses_reduced, **loss_dict_reduced)
+
+                    writer.add_scalar("Validation total loss", losses, iteration)
+                    for k, v in loss_dict.items():
+                        writer.add_scalar("Validation_" + k, v, iteration)
+
+
+            write_log(eta_string, iteration, logger, meters_val, optimizer, "Validation")
+            synchronize()
+            #synchronize()
+
         if iteration == max_iter:
             checkpointer.save("model_final", **arguments)
 
@@ -205,3 +174,43 @@ def do_train(
             total_time_str, total_training_time / (max_iter)
         )
     )
+
+
+def write_log(eta_string, iteration, logger, meters, optimizer, train_test_str="training"):
+    logger.info(
+        meters.delimiter.join(
+            [
+                "[{train_test}]: ",
+                "eta: {eta}",
+                "iter: {iter}",
+                "{meters}",
+                "lr: {lr:.6f}",
+                "max mem: {memory:.0f}",
+            ]
+        ).format(
+            train_test = train_test_str,
+            eta=eta_string,
+            iter=iteration,
+            meters=str(meters),
+            lr=optimizer.param_groups[0]["lr"],
+            memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
+        )
+    )
+
+
+def convert_to_cuda(cfg, device, images, targets):
+    if not cfg.MODEL.VID.ENABLE:
+        images = images.to(device)
+    else:
+        method = cfg.MODEL.VID.METHOD
+        if method in ("base",):
+            images = images.to(device)
+        elif method in ("rdn", "mega", "fgfa", "dff"):
+            images["cur"] = images["cur"].to(device)
+            for key in ("ref", "ref_l", "ref_m", "ref_g"):
+                if key in images.keys():
+                    images[key] = [img.to(device) for img in images[key]]
+        else:
+            raise ValueError("method {} not supported yet.".format(method))
+    targets = [target.to(device) for target in targets]
+    return images, targets
