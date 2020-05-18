@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from mega_core.layers.misc import interpolate
 from mega_core.utils import cv2_util
-import pycocotools.mask as mask_utils
+#import pycocotools.mask as mask_utils
 
 # transpose
 FLIP_LEFT_RIGHT = 0

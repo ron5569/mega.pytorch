@@ -1,8 +1,6 @@
 from mega_core.data import datasets
 
-from .coco import coco_evaluation
 from .voc import voc_evaluation
-from .cityscapes import abs_cityscapes_evaluation
 from .vid import vid_evaluation
 
 def evaluate(dataset, predictions, output_folder, **kwargs):
@@ -19,13 +17,8 @@ def evaluate(dataset, predictions, output_folder, **kwargs):
     args = dict(
         dataset=dataset, predictions=predictions, output_folder=output_folder, **kwargs
     )
-    if isinstance(dataset, datasets.COCODataset):
-        return coco_evaluation(**args)
-    elif isinstance(dataset, datasets.PascalVOCDataset):
-        return voc_evaluation(**args)
-    elif isinstance(dataset, datasets.AbstractDataset):
-        return abs_cityscapes_evaluation(**args)
-    elif isinstance(dataset, datasets.VIDDataset):
+
+    if isinstance(dataset, datasets.VIDDataset):
         return vid_evaluation(**args)
     else:
         dataset_name = dataset.__class__.__name__
